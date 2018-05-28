@@ -20,9 +20,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-
-public class BrushPreviewPerformer {
-
+/*
+This class is responsible draw the selected brush preview to a canvas.
+To draw the preview you need to set a PreviewCallbacks to be notified when the preview is ready to
+be drawn.
+ */
+class BrushPreviewPerformer {
 
     private final Canvas mPreviewCanvas;
     private final Bitmap mPreviewBitmap;
@@ -51,8 +54,8 @@ public class BrushPreviewPerformer {
     BrushPreviewPerformer(Context context, Brushes brushes, int w, int h) {
         mBrushes = brushes;
 
-        List<float[]> curvePoints = initializeCurve(context, w, h);
-        initializeCurvePoints(curvePoints);
+        List<float[]> curvePoints = initializePreviewCurve(context, w, h);
+        initializePreviewCurvePoints(curvePoints);
         mCurvePath = new Path();
         mCurvePath.moveTo(curvePoints.get(0)[0], curvePoints.get(0)[1]);
         for (int i = 1 ; i < curvePoints.size() ; i++) {
@@ -129,7 +132,7 @@ public class BrushPreviewPerformer {
             mStampBrush.drawPoint(mPreviewCanvas, x,y);
     }
 
-    private void initializeCurvePoints(List<float[]> curvePoints){
+    private void initializePreviewCurvePoints(List<float[]> curvePoints){
 
         int pointListSize = curvePoints.size();
         mPoints0 = new float[2 * (pointListSize/4)];
@@ -154,7 +157,7 @@ public class BrushPreviewPerformer {
 
     }
 
-    private List<float[]> initializeCurve(Context context, int w, int h){
+    private List<float[]> initializePreviewCurve(Context context, int w, int h){
         if (w == 0 || h == 0)
             throw new IllegalArgumentException("width & height must be > 0");
         float curvePoints[][] = new float[4][2];
@@ -189,6 +192,8 @@ public class BrushPreviewPerformer {
         return pointList;
     }
 
+    //This works on the main thread but the preview drawing is divide into multiple tasks.
+    //Drawing the preview curve immediately blocks the main thread.
     private Handler mHandler = new Handler(new Handler.Callback() {
         @Override
         public boolean handleMessage(Message message) {

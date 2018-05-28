@@ -14,7 +14,7 @@ public class DrawingEvent {
     }
 
     void clear() {
-        mSize = 0;/* clearing this array */
+        mSize = 0;
     }
 
     void setAction(int action) {

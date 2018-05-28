@@ -4,8 +4,10 @@ import android.util.Log;
 import java.util.ArrayList;
 import java.util.List;
 
-
-public class ActionStack {
+/*
+This is used for undo and redo operations.
+ */
+class ActionStack {
 
     private static final String TAG = "ActionStack";
     private static final long mMaxSize = Runtime.getRuntime().maxMemory() / 4;

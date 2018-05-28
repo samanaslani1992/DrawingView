@@ -1,6 +1,6 @@
 package com.raed.drawingview;
 
-/**
+/*
  * This filter uses quad interpolation to make drawing smother.
  */
 
@@ -43,6 +43,7 @@ class DrawingFilter{
     }
 
 
+    //call this method before each MotionEvent.ACTION_DOWN
     void reset() {
         mPoint0 = mPoint1 = null;
     }

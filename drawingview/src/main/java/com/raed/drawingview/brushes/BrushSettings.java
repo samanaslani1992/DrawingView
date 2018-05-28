@@ -83,6 +83,20 @@ public class BrushSettings {
         mListeners.add(listener);
     }
 
+    public void setBrushMinAndMaxSizeInPixel(int brushID, int minSize, int maxSize){
+        Brush brush = mBrushes.getBrush(brushID);
+        brush.setMinAndMaxSizeInPixel(minSize, maxSize);
+        notifyListeners();
+    }
+
+    public int getBrushMinSizeInPixel(int brushID){
+        return mBrushes.getBrush(brushID).getMinSizeInPixel();
+    }
+
+    public int getBrushMaxSizeInPixel(int brushID){
+        return mBrushes.getBrush(brushID).getMaxSizeInPixel();
+    }
+
     private void notifyListeners(){
         for (BrushSettingListener listener : mListeners)
             listener.onSettingsChanged();

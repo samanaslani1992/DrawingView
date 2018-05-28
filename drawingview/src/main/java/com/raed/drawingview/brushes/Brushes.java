@@ -11,7 +11,6 @@ import com.raed.drawingview.brushes.stampbrushes.BitmapBrush;
 import com.raed.drawingview.brushes.stampbrushes.Calligraphy;
 import com.raed.drawingview.brushes.stampbrushes.RandRotBitmapBrush;
 
-
 public class Brushes {
 
     public static final int PEN = 0;

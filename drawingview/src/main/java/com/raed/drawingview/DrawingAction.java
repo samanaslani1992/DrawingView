@@ -14,6 +14,7 @@ class DrawingAction {
         mRect = new Rect(rect);
     }
 
+    //The size is needed so we do not get an OutOfMemoryError
     int getSize() {
         return mBitmap.getAllocationByteCount();
     }

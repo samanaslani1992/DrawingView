@@ -18,7 +18,7 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintBottom_toTopOf="@id/guideline"
-        app:brush="calligraphy"
+        app:brush="pencil"
         app:brush_size="1"
         app:brush_color="#2187bb"
         app:drawing_background_color="#dddddd"

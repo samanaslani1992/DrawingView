@@ -1,7 +1,5 @@
 package com.raed.drawingview;
 
-
-
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.content.Context;
@@ -32,7 +30,7 @@ public class DrawingView extends View{
     private Bitmap mBGBitmap;
     private int mBGColor;//BackGroundColor
 
-    //if true, do not drawFromTo any thin. Just zoom and translate thr drawing in onTouchEvent()
+    //if true, do not draw anything. Just zoom and translate thr drawing in onTouchEvent()
     private boolean mZoomMode = false;
 
     private float mDrawingTranslationX = 0f;
@@ -44,7 +42,7 @@ public class DrawingView extends View{
 
     private ActionStack mActionStack;//This is used for undo/redo, if null this means the undo and redo are disabled
 
-    private DrawingPerformer mDrawingPerformer;
+    private DrawingPerformer mDrawingPerformer;//
 
     private OnDrawListener mOnDrawListener;
 
@@ -206,7 +204,8 @@ public class DrawingView extends View{
         Bitmap bitmap = Bitmap.createBitmap(
                 mDrawingBitmap.getWidth(),
                 mDrawingBitmap.getHeight(),
-                Bitmap.Config.ARGB_8888);
+                Bitmap.Config.ARGB_8888
+        );
         Canvas canvas = new Canvas(bitmap);
         canvas.drawColor(mBGColor);
         if (mBGBitmap != null)
@@ -543,7 +542,7 @@ public class DrawingView extends View{
         public void onDrawingPerformed(Bitmap bitmap, Rect rect) {
             mCleared = false;
             if (mActionStack !=  null)
-                storeAction(rect);
+                storeAction(rect);//for undo and redo
             mCanvas.drawBitmap(bitmap, rect.left, rect.top, null);
             invalidate();
             if (mOnDrawListener != null)
@@ -554,7 +553,7 @@ public class DrawingView extends View{
         public void onDrawingPerformed(Path path, Paint paint, Rect rect) {
             mCleared = false;
             if (mActionStack !=  null)
-                storeAction(rect);
+                storeAction(rect);//for undo and redo
             mCanvas.drawPath(path, paint);
             invalidate();
             if (mOnDrawListener != null)

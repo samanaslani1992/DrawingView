@@ -17,7 +17,7 @@ import com.raed.drawingview.brushes.androidpathbrushes.PathBrushRenderer;
 import com.raed.drawingview.brushes.stampbrushes.StampBrush;
 import com.raed.drawingview.brushes.stampbrushes.StampBrushRenderer;
 
-public class DrawingPerformer {
+class DrawingPerformer {
 
     private static final String TAG = "DrawingPerformer";
     private BrushRenderer mCurrentBrushRenderer;
