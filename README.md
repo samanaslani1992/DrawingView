@@ -17,14 +17,14 @@ DrawingView allows the user to draw with different brushes and provides some fea
 ## Download
 Gradle:
 ```groovy
-implementation 'com.raed.drawingview:drawingview:1.1-beta'
+implementation 'com.raed.drawingview:drawingview:1.2'
 ```
 Maven:
 ```xml
 <dependency>
   <groupId>com.raed.drawingview</groupId>
   <artifactId>drawingview</artifactId>
-  <version>1.1-beta</version>
+  <version>1.2</version>
   <type>pom</type>
 </dependency>
 ```
@@ -35,7 +35,7 @@ Add the following to your layout file:
         android:id="@+id/drawing_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:brush="calligraphy"
+        app:brush="pencil"
         app:brush_size="1"
         app:brush_color="#2187bb"
         app:drawing_background_color="#dddddd"
@@ -143,6 +143,21 @@ Add the following to your layout file:
 And in your java code:
 ```java
 mBrushView.setDrawingView(mDrawingView);
+```
+### Min and Max Brush Size
+You can control the min and max size of a brush. For example:
+```java
+        DrawingView drawingView = findViewById(R.id.drawing_view);
+        BrushSettings brushSettings = drawingView.getBrushSettings();
+        
+        brushSettings.setBrushMinAndMaxSizeInPixel(
+                Brushes.PENCIL, //brush ID
+                50, //min size 
+                100 //max size
+        );
+
+        //the size will be -> 50 + 0.5 * (100 - 50) = 75 pixel
+        brushSettings.setBrushSize(Brushes.PENCIL, 0.5f);
 ```
 
 ## License
