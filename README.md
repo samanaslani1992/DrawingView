@@ -18,14 +18,14 @@ DrawingView allows the user to draw with different brushes and provides some fea
 ## Download
 Gradle:
 ```groovy
-implementation 'com.raed.drawingview:drawingview:1.2'
+implementation 'com.raed.drawingview:drawingview:1.3.0'
 ```
 Maven:
 ```xml
 <dependency>
   <groupId>com.raed.drawingview</groupId>
   <artifactId>drawingview</artifactId>
-  <version>1.2</version>
+  <version>1.3.0</version>
   <type>pom</type>
 </dependency>
 ```
