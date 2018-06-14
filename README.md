@@ -1,4 +1,5 @@
 # DrawingView For Android
+[![Android Arsenal]( https://img.shields.io/badge/Android%20Arsenal-DrawingView-green.svg?style=flat )]( https://android-arsenal.com/details/1/6968 ) [![License]( https://img.shields.io/badge/License-Apache%202.0-blue.svg )]( https://opensource.org/licenses/Apache-2.0 ) [![License]( https://img.shields.io/badge/API-19%2B-blue.svg?style=flat )]( https://android-arsenal.com/api?level=19 )
 ## Description
 DrawingView allows the user to draw with different brushes and provides some features.
 ## Features
@@ -101,12 +102,12 @@ mRedoButton.setEnabled(!mDrawingView.isRedoStackEmpty());
 ```
 
 ### Drawing on images:
-You can draw on top of an image by calling the following method:
+You can draw on top of an image by calling the following method, but please remember that calling this method **clears any previous drawing**:
 ```java
 Bitmap photo = ...
 mDrawingView.setBackgroundImage(photo);
 ```
-But please remember that calling this method **clears any previous drawings if any**, and if the image is larger than the view it will be scaled down.
+If the image is larger than the view it will be scaled down.
 ### How to get your drawing?
 In most casses you want to use this method to get your drawing:
 ```java
@@ -118,7 +119,7 @@ Bitmap bitmap = mDrawingView.exportDrawingWithoutBackground();
 ```
 ### Zoom in/out
 When the DrawingView is in the Zoom Mode it does not draw anything, touch events are used to zoom and move the drawing.
-The following code show you how to enter and exit the Zoom Mode
+The following code shows you how to enter and exit the Zoom Mode
 ```java
 zoomModeButton.setOnClickListener(v -> {
     if (mDrawingView.isInZoomMode()) {
