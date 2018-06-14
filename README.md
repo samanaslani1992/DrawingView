@@ -102,12 +102,12 @@ mRedoButton.setEnabled(!mDrawingView.isRedoStackEmpty());
 ```
 
 ### Drawing on images:
-You can draw on top of an image by calling the following method:
+You can draw on top of an image by calling the following method, but please remember that calling this method **clears any previous drawing**:
 ```java
 Bitmap photo = ...
 mDrawingView.setBackgroundImage(photo);
 ```
-But please remember that calling this method **clears any previous drawing**, and if the image is larger than the view it will be scaled down.
+If the image is larger than the view it will be scaled down.
 ### How to get your drawing?
 In most casses you want to use this method to get your drawing:
 ```java
@@ -119,7 +119,7 @@ Bitmap bitmap = mDrawingView.exportDrawingWithoutBackground();
 ```
 ### Zoom in/out
 When the DrawingView is in the Zoom Mode it does not draw anything, touch events are used to zoom and move the drawing.
-The following code show you how to enter and exit the Zoom Mode
+The following code shows you how to enter and exit the Zoom Mode
 ```java
 zoomModeButton.setOnClickListener(v -> {
     if (mDrawingView.isInZoomMode()) {
