@@ -17,5 +17,6 @@
     <string name="import_bitmap">setDrawingBitmap()</string>
     <string name="export">export()</string>
     <string name="export_without_bg">exportWithoutBackground()</string>
+    <string name="set_background_null">setBackgroundBitmap(null)</string>
 
 </resources>

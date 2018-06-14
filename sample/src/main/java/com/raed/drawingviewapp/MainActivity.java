@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.drawable.ColorDrawable;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
@@ -95,10 +96,23 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.set_background).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED){
+                    ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 0);
+                    return;
+                }
                 Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
                 intent.addCategory(Intent.CATEGORY_OPENABLE);
                 intent.setType("image/*");
                 startActivityForResult(intent, REQUEST_CODE_IMPORT_IMAGE);
+            }
+        });
+
+        findViewById(R.id.set_background_null).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mDrawingView.setBackgroundImage(null);
+                mUndoButton.setEnabled(!mDrawingView.isUndoStackEmpty());
+                mRedoButton.setEnabled(!mDrawingView.isRedoStackEmpty());
             }
         });
 
@@ -157,6 +171,8 @@ public class MainActivity extends AppCompatActivity {
             try {
                 Bitmap bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), data.getData());
                 mDrawingView.setBackgroundImage(bitmap);
+                mUndoButton.setEnabled(!mDrawingView.isUndoStackEmpty());
+                mRedoButton.setEnabled(!mDrawingView.isRedoStackEmpty());
             } catch (IOException e) {
                 e.printStackTrace();
             }

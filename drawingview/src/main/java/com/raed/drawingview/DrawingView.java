@@ -98,11 +98,16 @@ public class DrawingView extends View{
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
-        if (mDrawingBitmap == null && w != 0 && h != 0) {
+        if (w == 0 || h == 0 || mDrawingBitmap != null)
+            return;
+        if (mBGBitmap == null) {
             initializeDrawingBitmap(
-                    w - getPaddingStart() - getPaddingEnd(),
-                    h - getPaddingTop() - getPaddingBottom());
-            invalidate();
+                    (int) getWidthWithoutPadding(),
+                    (int) getHeightWithoutPadding());
+        }else {//in most cases this means the setBackgroundImage has been called before the view gets its dimensions
+            //call this method so mBGBitmap gets scaled and aligned in the center
+            //this method should also call initializeDrawingBitmap
+            setBackgroundImage(mBGBitmap);
         }
     }
 
@@ -236,8 +241,18 @@ public class DrawingView extends View{
      * @param bitmap to be used as a background image.
      */
     public void setBackgroundImage(Bitmap bitmap) {
-        privateSetBGBitmap(bitmap);
-        initializeDrawingBitmap(mBGBitmap.getWidth(), mBGBitmap.getHeight());
+        mBGBitmap = bitmap;
+        if (getWidth() == 0 || getHeight() == 0)
+            return;//mBGBitmap will be scaled when the view gets its dimensions
+        if (mBGBitmap == null){
+            mScaleFactor = 1f;
+            mDrawingTranslationX = mDrawingTranslationY = 0;
+            initializeDrawingBitmap(((int) getWidthWithoutPadding()), (int) getHeightWithoutPadding());
+        }else {
+            scaleBGBitmapIfNeeded();
+            alignDrawingInTheCenter();
+            initializeDrawingBitmap(mBGBitmap.getWidth(), mBGBitmap.getHeight());
+        }
         if (mActionStack != null) //if undo and redo is enabled, remove the old actions by creating a new instance.
             mActionStack = new ActionStack();
         invalidate();
@@ -490,50 +505,53 @@ public class DrawingView extends View{
         }
     }
 
-    private void privateSetBGBitmap(Bitmap bitmap){
-        float canvasWidth = getWidth() - getPaddingStart() - getPaddingEnd();
-        float canvasHeight = getHeight() - getPaddingTop() - getPaddingBottom();
-        float bitmapWidth = bitmap.getWidth();
-        float bitmapHeight = bitmap.getHeight();
+    private void scaleBGBitmapIfNeeded(){
+        float canvasWidth = getWidthWithoutPadding();
+        float canvasHeight = getHeightWithoutPadding();
+        if (canvasWidth <= 0 || canvasHeight <= 0)
+            return;
+        float bitmapWidth = mBGBitmap.getWidth();
+        float bitmapHeight = mBGBitmap.getHeight();
         float scaleFactor = 1;
         //if the bitmap is smaller than the view -> find a scale factor to scale it down
         if (bitmapWidth > canvasWidth && bitmapHeight > canvasHeight) {
-            scaleFactor = canvasHeight/bitmapHeight;
-            if ((int) (bitmap.getWidth() * scaleFactor) > canvasWidth)
-                scaleFactor = canvasWidth/bitmapWidth;
+            scaleFactor = Math.min(canvasHeight/bitmapHeight, canvasWidth/bitmapWidth);
         } else if (bitmapWidth > canvasWidth && bitmapHeight < canvasHeight)
             scaleFactor = canvasWidth/bitmapWidth;
         else if (bitmapWidth < canvasWidth && bitmapHeight > canvasHeight)
             scaleFactor = canvasHeight/bitmapHeight;
 
         if (scaleFactor != 1)//if the bitmap is larger than the view scale it down
-            bitmap = Utilities.resizeBitmap(bitmap, ((int) (bitmap.getWidth() * scaleFactor)), (int) (bitmap.getHeight() * scaleFactor));
+            mBGBitmap = Utilities.resizeBitmap(mBGBitmap, ((int) (mBGBitmap.getWidth() * scaleFactor)), (int) (mBGBitmap.getHeight() * scaleFactor));
+    }
 
-        mBGBitmap = bitmap;
-
+    private void alignDrawingInTheCenter(){
+        float canvasWidth = getWidthWithoutPadding();
+        float canvasHeight = getHeightWithoutPadding();
+        if (canvasWidth <= 0 || canvasHeight <= 0)
+            return;
         mScaleFactor = calcAppropriateScaleFactor(mBGBitmap.getWidth(), mBGBitmap.getHeight());
-
         //align the bitmap in the center
         mDrawingTranslationX = (canvasWidth - mBGBitmap.getWidth() * mScaleFactor)/2;
         mDrawingTranslationY = (canvasHeight - mBGBitmap.getHeight() * mScaleFactor)/2;
     }
 
     private float calcAppropriateScaleFactor(int bitmapWidth, int bitmapHeight){
-        float canvasWidth = getWidth() - getPaddingStart() - getPaddingEnd();
-        float canvasHeight = getHeight() - getPaddingTop() - getPaddingBottom();
+        float canvasWidth = getWidthWithoutPadding();
+        float canvasHeight = getHeightWithoutPadding();
         if (bitmapWidth < canvasWidth && bitmapHeight < canvasHeight){
-            float scaleFactor;
-            //if the bitmap is smaller than the view -> zoom in
-            scaleFactor = canvasHeight/bitmapHeight;//let us zoom in to make the bitmap height appears equal to the view height
-            if (bitmapWidth * scaleFactor > canvasWidth){
-                //OHHH NO,  the bitmap width is larger than the view width, let us make the scale factor depends
-                // on the width and for sure the bitmap height will appear less than the view height.
-                scaleFactor = canvasWidth/bitmapWidth;
-            }
-             return scaleFactor;
-        }else { //otherwise just make sure the scale is 1
+            return Math.min(canvasHeight/bitmapHeight, canvasWidth/bitmapWidth);
+        }else { //otherwise just make the scale factor is 1
             return 1f;
         }
+    }
+
+    private float getWidthWithoutPadding() {
+        return getWidth() - getPaddingStart() - getPaddingEnd();
+    }
+
+    private float getHeightWithoutPadding() {
+        return getHeight() - getPaddingTop() - getPaddingBottom();
     }
 
     private class MyDrawingPerformerListener implements DrawingPerformer.DrawingPerformerListener{
