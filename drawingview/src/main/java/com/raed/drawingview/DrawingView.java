@@ -2,6 +2,7 @@ package com.raed.drawingview;
 
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
@@ -20,7 +21,7 @@ import com.raed.drawingview.brushes.BrushSettings;
 import com.raed.drawingview.brushes.Brushes;
 
 
-public class DrawingView extends View{
+public class DrawingView extends View {
 
     private static final float MAX_SCALE = 5f;
     private static final float MIN_SCALE = 0.1f;
@@ -37,8 +38,8 @@ public class DrawingView extends View{
     private float mDrawingTranslationY = 0f;
     private float mScaleFactor = 1f;
 
-    private float mLastX[] = new float[2];
-    private float mLastY[] = new float[2];
+    private float[] mLastX = new float[2];
+    private float[] mLastY = new float[2];
 
     private ActionStack mActionStack;//This is used for undo/redo, if null this means the undo and redo are disabled
 
@@ -50,17 +51,17 @@ public class DrawingView extends View{
 
     private boolean mCleared = true;
 
-    private Paint mSrcPaint = new Paint(){{
-            setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC));
-        }};
+    private Paint mSrcPaint = new Paint() {{
+        setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC));
+    }};
 
     private ScaleGestureDetector mScaleGestureDetector = new ScaleGestureDetector(
             getContext(),
-            new ScaleGestureDetector.SimpleOnScaleGestureListener(){
+            new ScaleGestureDetector.SimpleOnScaleGestureListener() {
                 @Override
                 public boolean onScale(ScaleGestureDetector detector) {
-                    float xCenter = (mLastX[0] + mLastX[1])/2;
-                    float yCenter = (mLastY[0] + mLastY[1])/2;
+                    float xCenter = (mLastX[0] + mLastX[1]) / 2;
+                    float yCenter = (mLastY[0] + mLastY[1]) / 2;
                     float xd = (xCenter - mDrawingTranslationX);
                     float yd = (yCenter - mDrawingTranslationY);
                     mScaleFactor *= detector.getScaleFactor();
@@ -75,10 +76,8 @@ public class DrawingView extends View{
                 }
             }
     );
-
-    public interface OnDrawListener{
-        void onDraw();
-    }
+    private int mPointerId;
+    private boolean translateAction = true;
 
     public DrawingView(Context context) {
         this(context, null);
@@ -104,7 +103,7 @@ public class DrawingView extends View{
             initializeDrawingBitmap(
                     (int) getWidthWithoutPadding(),
                     (int) getHeightWithoutPadding());
-        }else {//in most cases this means the setBackgroundImage has been called before the view gets its dimensions
+        } else {//in most cases this means the setBackgroundImage has been called before the view gets its dimensions
             //call this method so mBGBitmap gets scaled and aligned in the center
             //this method should also call initializeDrawingBitmap
             setBackgroundImage(mBGBitmap);
@@ -119,8 +118,8 @@ public class DrawingView extends View{
         canvas.clipRect(
                 getPaddingStart(),
                 getPaddingTop(),
-                canvas.getWidth() - getPaddingRight(),
-                canvas.getHeight() - getPaddingBottom()
+                getWidth() - getPaddingRight(),
+                getHeight() - getPaddingBottom()
         );
 
         //drawFromTo the background and the bitmap in the middle with scale and translation
@@ -138,7 +137,7 @@ public class DrawingView extends View{
         if (mDrawingPerformer.isDrawing())//true if the user is touching the screen
             mDrawingPerformer.draw(canvas, mDrawingBitmap);
         else
-            canvas.drawBitmap(mDrawingBitmap,0, 0, null);
+            canvas.drawBitmap(mDrawingBitmap, 0, 0, null);
     }
 
     @Override
@@ -152,6 +151,7 @@ public class DrawingView extends View{
         setMeasuredDimension(measuredWidth, measuredHeight);
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         super.onTouchEvent(event);
@@ -167,17 +167,15 @@ public class DrawingView extends View{
         return true;
     }
 
-    private int mPointerId;
-    private boolean translateAction = true;
     public boolean handleZoomAndTransEvent(MotionEvent event) {
         super.onTouchEvent(event);
         if (event.getActionMasked() == MotionEvent.ACTION_POINTER_UP && event.getPointerCount() == 1)
             return false;
-        if (event.getPointerCount() > 1){
+        if (event.getPointerCount() > 1) {
             translateAction = false;
             mScaleGestureDetector.onTouchEvent(event);
-        }else if (translateAction)
-            switch (event.getActionMasked()){
+        } else if (translateAction)
+            switch (event.getActionMasked()) {
                 case MotionEvent.ACTION_DOWN:
                     mPointerId = event.getPointerId(0);
                     break;
@@ -205,7 +203,7 @@ public class DrawingView extends View{
         return true;
     }
 
-    public Bitmap exportDrawing(){
+    public Bitmap exportDrawing() {
         Bitmap bitmap = Bitmap.createBitmap(
                 mDrawingBitmap.getWidth(),
                 mDrawingBitmap.getHeight(),
@@ -219,16 +217,11 @@ public class DrawingView extends View{
         return bitmap;
     }
 
-    public Bitmap exportDrawingWithoutBackground(){
+    public Bitmap exportDrawingWithoutBackground() {
         return mDrawingBitmap;
     }
 
-    public void setDrawingBackground(int color){
-        mBGColor = color;
-        invalidate();
-    }
-
-    public void setUndoAndRedoEnable(boolean enabled){
+    public void setUndoAndRedoEnable(boolean enabled) {
         if (enabled)
             mActionStack = new ActionStack();
         else
@@ -238,17 +231,18 @@ public class DrawingView extends View{
     /**
      * Set an image as a background so you can draw on top of it. NOTE that calling this method is
      * going to clear anything drawn previously and you will not be able to restore anything with undo().
+     *
      * @param bitmap to be used as a background image.
      */
     public void setBackgroundImage(Bitmap bitmap) {
         mBGBitmap = bitmap;
         if (getWidth() == 0 || getHeight() == 0)
             return;//mBGBitmap will be scaled when the view gets its dimensions
-        if (mBGBitmap == null){
+        if (mBGBitmap == null) {
             mScaleFactor = 1f;
             mDrawingTranslationX = mDrawingTranslationY = 0;
             initializeDrawingBitmap(((int) getWidthWithoutPadding()), (int) getHeightWithoutPadding());
-        }else {
+        } else {
             scaleBGBitmapIfNeeded();
             alignDrawingInTheCenter();
             initializeDrawingBitmap(mBGBitmap.getWidth(), mBGBitmap.getHeight());
@@ -262,7 +256,12 @@ public class DrawingView extends View{
         return mBGColor;
     }
 
-    public void resetZoom(){
+    public void setDrawingBackground(int color) {
+        mBGColor = color;
+        invalidate();
+    }
+
+    public void resetZoom() {
         //if the bitmap is smaller than the view zoom in to make the bitmap fit the view
         float targetSF = calcAppropriateScaleFactor(mDrawingBitmap.getWidth(), mDrawingBitmap.getHeight());
 
@@ -284,6 +283,7 @@ public class DrawingView extends View{
     /**
      * This method clears the drawing bitmap. If this method is called consecutively only the first
      * call will take effect.
+     *
      * @return true if the canvas cleared successfully.
      */
     public boolean clear() {
@@ -295,7 +295,7 @@ public class DrawingView extends View{
                 mDrawingBitmap.getWidth(),
                 mDrawingBitmap.getHeight()
         );
-        if (mActionStack != null){
+        if (mActionStack != null) {
             DrawingAction drawingAction = new DrawingAction(
                     Bitmap.createBitmap(mDrawingBitmap),
                     rect
@@ -316,7 +316,7 @@ public class DrawingView extends View{
         return mBrushes;
     }
 
-    public boolean undo(){
+    public boolean undo() {
         if (mActionStack == null)
             throw new IllegalStateException("Undo functionality is disable you can enable it by calling setUndoAndRedoEnable(true)");
         if (mActionStack.isUndoStackEmpty() || mDrawingPerformer.isDrawing())
@@ -328,7 +328,7 @@ public class DrawingView extends View{
         return true;
     }
 
-    public boolean redo(){
+    public boolean redo() {
         if (mActionStack == null)
             throw new IllegalStateException("Redo functionality is disable you can enable it by calling setUndoAndRedoEnable(true)");
         if (mActionStack.isRedoStackEmpty() || mDrawingPerformer.isDrawing())
@@ -340,13 +340,13 @@ public class DrawingView extends View{
         return true;
     }
 
-    public boolean isUndoStackEmpty(){
+    public boolean isUndoStackEmpty() {
         if (mActionStack == null)
             throw new IllegalStateException("Undo functionality is disable you can enable it by calling setUndoAndRedoEnable(true)");
         return mActionStack.isUndoStackEmpty();
     }
 
-    public boolean isRedoStackEmpty(){
+    public boolean isRedoStackEmpty() {
         if (mActionStack == null)
             throw new IllegalStateException("Undo functionality is disable you can enable it by calling setUndoAndRedoEnable(true)");
         return mActionStack.isRedoStackEmpty();
@@ -355,6 +355,7 @@ public class DrawingView extends View{
     /**
      * Return an instance of BrushSetting, you can use it to change the selected brush. And change
      * the size of the selected brush and the color.
+     *
      * @return an instance of BrushSetting associated with this DrawingView.
      */
     public BrushSettings getBrushSettings() {
@@ -364,6 +365,7 @@ public class DrawingView extends View{
     /**
      * Enter the zoom mode to be able to zoom and move the drawing. Note that you cannot enter
      * the zoom mode if the the user is drawing.
+     *
      * @return true if enter successfully, false otherwise.
      */
     public boolean enterZoomMode() {
@@ -429,7 +431,7 @@ public class DrawingView extends View{
         invalidate();
     }
 
-    private DrawingAction getOppositeAction(DrawingAction action){
+    private DrawingAction getOppositeAction(DrawingAction action) {
         Rect rect = action.mRect;
         Bitmap bitmap = Bitmap.createBitmap(
                 mDrawingBitmap,
@@ -441,48 +443,48 @@ public class DrawingView extends View{
         return new DrawingAction(bitmap, rect);
     }
 
-    protected void checkBounds(){
+    protected void checkBounds() {
         int width = mDrawingBitmap.getWidth();
         int height = mDrawingBitmap.getHeight();
-        
+
         int contentWidth = (int) (width * mScaleFactor);
         int contentHeight = (int) (height * mScaleFactor);
 
-        float widthBound = getWidth()/6;
-        float heightBound = getHeight()/6;
+        float widthBound = getWidth() / 6;
+        float heightBound = getHeight() / 6;
 
-        if (contentWidth < widthBound){
-            if (mDrawingTranslationX < -contentWidth/2)
-                mDrawingTranslationX = -contentWidth/2f;
-            else if (mDrawingTranslationX > getWidth() - contentWidth/2)
-                mDrawingTranslationX = getWidth() - contentWidth/2f;
+        if (contentWidth < widthBound) {
+            if (mDrawingTranslationX < -contentWidth / 2)
+                mDrawingTranslationX = -contentWidth / 2f;
+            else if (mDrawingTranslationX > getWidth() - contentWidth / 2)
+                mDrawingTranslationX = getWidth() - contentWidth / 2f;
         } else if (mDrawingTranslationX > getWidth() - widthBound)
             mDrawingTranslationX = getWidth() - widthBound;
         else if (mDrawingTranslationX + contentWidth < widthBound)
-            mDrawingTranslationX = widthBound -  contentWidth;
+            mDrawingTranslationX = widthBound - contentWidth;
 
-        if (contentHeight < heightBound){
-            if (mDrawingTranslationY < -contentHeight/2)
-                mDrawingTranslationY = -contentHeight/2f;
-            else if (mDrawingTranslationY > getHeight() - contentHeight/2)
-                mDrawingTranslationY = getHeight() - contentHeight/2f;
-        }else if (mDrawingTranslationY > getHeight() - heightBound)
+        if (contentHeight < heightBound) {
+            if (mDrawingTranslationY < -contentHeight / 2)
+                mDrawingTranslationY = -contentHeight / 2f;
+            else if (mDrawingTranslationY > getHeight() - contentHeight / 2)
+                mDrawingTranslationY = getHeight() - contentHeight / 2f;
+        } else if (mDrawingTranslationY > getHeight() - heightBound)
             mDrawingTranslationY = getHeight() - heightBound;
         else if (mDrawingTranslationY + contentHeight < heightBound)
-            mDrawingTranslationY = heightBound -  contentHeight;
+            mDrawingTranslationY = heightBound - contentHeight;
     }
 
     private void initializeDrawingBitmap(int w, int h) {
         mDrawingBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
         mCanvas = new Canvas(mDrawingBitmap);
-        if (mDrawingPerformer == null){
+        if (mDrawingPerformer == null) {
             mDrawingPerformer = new DrawingPerformer(mBrushes);
             mDrawingPerformer.setPaintPerformListener(new MyDrawingPerformerListener());
         }
         mDrawingPerformer.setWidthAndHeight(w, h);
     }
 
-    private void initializeAttributes(AttributeSet attrs){
+    private void initializeAttributes(AttributeSet attrs) {
         TypedArray typedArray = getContext().getTheme().obtainStyledAttributes(
                 attrs,
                 R.styleable.DrawingView,
@@ -505,7 +507,7 @@ public class DrawingView extends View{
         }
     }
 
-    private void scaleBGBitmapIfNeeded(){
+    private void scaleBGBitmapIfNeeded() {
         float canvasWidth = getWidthWithoutPadding();
         float canvasHeight = getHeightWithoutPadding();
         if (canvasWidth <= 0 || canvasHeight <= 0)
@@ -515,33 +517,33 @@ public class DrawingView extends View{
         float scaleFactor = 1;
         //if the bitmap is smaller than the view -> find a scale factor to scale it down
         if (bitmapWidth > canvasWidth && bitmapHeight > canvasHeight) {
-            scaleFactor = Math.min(canvasHeight/bitmapHeight, canvasWidth/bitmapWidth);
+            scaleFactor = Math.min(canvasHeight / bitmapHeight, canvasWidth / bitmapWidth);
         } else if (bitmapWidth > canvasWidth && bitmapHeight < canvasHeight)
-            scaleFactor = canvasWidth/bitmapWidth;
+            scaleFactor = canvasWidth / bitmapWidth;
         else if (bitmapWidth < canvasWidth && bitmapHeight > canvasHeight)
-            scaleFactor = canvasHeight/bitmapHeight;
+            scaleFactor = canvasHeight / bitmapHeight;
 
         if (scaleFactor != 1)//if the bitmap is larger than the view scale it down
             mBGBitmap = Utilities.resizeBitmap(mBGBitmap, ((int) (mBGBitmap.getWidth() * scaleFactor)), (int) (mBGBitmap.getHeight() * scaleFactor));
     }
 
-    private void alignDrawingInTheCenter(){
+    private void alignDrawingInTheCenter() {
         float canvasWidth = getWidthWithoutPadding();
         float canvasHeight = getHeightWithoutPadding();
         if (canvasWidth <= 0 || canvasHeight <= 0)
             return;
         mScaleFactor = calcAppropriateScaleFactor(mBGBitmap.getWidth(), mBGBitmap.getHeight());
         //align the bitmap in the center
-        mDrawingTranslationX = (canvasWidth - mBGBitmap.getWidth() * mScaleFactor)/2;
-        mDrawingTranslationY = (canvasHeight - mBGBitmap.getHeight() * mScaleFactor)/2;
+        mDrawingTranslationX = (canvasWidth - mBGBitmap.getWidth() * mScaleFactor) / 2;
+        mDrawingTranslationY = (canvasHeight - mBGBitmap.getHeight() * mScaleFactor) / 2;
     }
 
-    private float calcAppropriateScaleFactor(int bitmapWidth, int bitmapHeight){
+    private float calcAppropriateScaleFactor(int bitmapWidth, int bitmapHeight) {
         float canvasWidth = getWidthWithoutPadding();
         float canvasHeight = getHeightWithoutPadding();
-        if (bitmapWidth < canvasWidth && bitmapHeight < canvasHeight){
-            return Math.min(canvasHeight/bitmapHeight, canvasWidth/bitmapWidth);
-        }else { //otherwise just make the scale factor is 1
+        if (bitmapWidth < canvasWidth && bitmapHeight < canvasHeight) {
+            return Math.min(canvasHeight / bitmapHeight, canvasWidth / bitmapWidth);
+        } else { //otherwise just make the scale factor is 1
             return 1f;
         }
     }
@@ -554,40 +556,71 @@ public class DrawingView extends View{
         return getHeight() - getPaddingTop() - getPaddingBottom();
     }
 
-    private class MyDrawingPerformerListener implements DrawingPerformer.DrawingPerformerListener{
+    //saman aslani
+    public void setNewDraw(Bitmap bitmap, Rect rect) {
+        mCleared = false;
+        if (mActionStack != null)
+            storeAction(rect);//for undo and redo
+        mCanvas.drawBitmap(bitmap, rect.left, rect.top, null);
+        invalidate();
+        if (mOnDrawListener != null)
+            mOnDrawListener.onDraw(bitmap, rect);
+    }
+
+    //saman aslani
+    public void setNewDraw(Path path, Paint paint, Rect rect) {
+        mCleared = false;
+        if (mActionStack != null)
+            storeAction(rect);//for undo and redo
+        mCanvas.drawPath(path, paint);
+        invalidate();
+        if (mOnDrawListener != null)
+            mOnDrawListener.onDraw(path, paint, rect);
+    }
+
+    private void storeAction(Rect rect) {
+        Bitmap bitmap = Bitmap.createBitmap(
+                mDrawingBitmap,
+                rect.left,
+                rect.top,
+                rect.right - rect.left,
+                rect.bottom - rect.top
+        );
+        DrawingAction action = new DrawingAction(bitmap, rect);
+        mActionStack.addAction(action);
+    }
+
+    public interface OnDrawListener {
+
+        void onDraw(Bitmap bitmap, Rect rect);
+
+        void onDraw(Path path, Paint paint, Rect rect);
+    }
+
+    public class MyDrawingPerformerListener implements DrawingPerformer.DrawingPerformerListener {
 
         @Override
         public void onDrawingPerformed(Bitmap bitmap, Rect rect) {
             mCleared = false;
-            if (mActionStack !=  null)
+            if (mActionStack != null)
                 storeAction(rect);//for undo and redo
             mCanvas.drawBitmap(bitmap, rect.left, rect.top, null);
             invalidate();
             if (mOnDrawListener != null)
-                mOnDrawListener.onDraw();
+                mOnDrawListener.onDraw(bitmap, rect);
         }
 
         @Override
         public void onDrawingPerformed(Path path, Paint paint, Rect rect) {
             mCleared = false;
-            if (mActionStack !=  null)
+            if (mActionStack != null)
                 storeAction(rect);//for undo and redo
             mCanvas.drawPath(path, paint);
             invalidate();
             if (mOnDrawListener != null)
-                mOnDrawListener.onDraw();
+                mOnDrawListener.onDraw(path, paint, rect);
         }
 
-        private void storeAction(Rect rect) {
-            Bitmap bitmap = Bitmap.createBitmap(
-                    mDrawingBitmap,
-                    rect.left,
-                    rect.top,
-                    rect.right - rect.left,
-                    rect.bottom - rect.top
-            );
-            DrawingAction action = new DrawingAction(bitmap, rect);
-            mActionStack.addAction(action);
-        }
+
     }
 }

@@ -4,21 +4,24 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
+import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.CompoundButton;
 import android.widget.RadioButton;
 import android.widget.SeekBar;
+import android.widget.Toast;
+
 import com.raed.drawingview.BrushView;
 import com.raed.drawingview.DrawingView;
 import com.raed.drawingview.brushes.BrushSettings;
@@ -56,93 +59,88 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
                 BrushSettings brushSettings = mDrawingView.getBrushSettings();
-                brushSettings.setSelectedBrushSize(i/100f);
+                brushSettings.setSelectedBrushSize(i / 100f);
             }
-            public void onStartTrackingTouch(SeekBar seekBar) {}
-            public void onStopTrackingTouch(SeekBar seekBar) {}
-        });
 
-        findViewById(R.id.clear).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (mDrawingView.clear()) {
-                    mUndoButton.setEnabled(true);
-                    mRedoButton.setEnabled(false);
-                }
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+
+            public void onStopTrackingTouch(SeekBar seekBar) {
             }
         });
 
-        findViewById(R.id.reset_zoom).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                mDrawingView.resetZoom();
+        findViewById(R.id.clear).setOnClickListener(view -> {
+            if (mDrawingView.clear()) {
+                mUndoButton.setEnabled(true);
+                mRedoButton.setEnabled(false);
             }
         });
+
+        findViewById(R.id.reset_zoom).setOnClickListener(view -> mDrawingView.resetZoom());
 
         final Button zoomModeButton = findViewById(R.id.zoom_mode_button);
-        zoomModeButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (mDrawingView.isInZoomMode()) {
-                    mDrawingView.exitZoomMode();
-                    zoomModeButton.setText(R.string.enterzoommode);
-                    return;
-                }
-                mDrawingView.enterZoomMode();
-                zoomModeButton.setText(R.string.exitzoommode);
+        zoomModeButton.setOnClickListener(view -> {
+            if (mDrawingView.isInZoomMode()) {
+                mDrawingView.exitZoomMode();
+                zoomModeButton.setText(R.string.enterzoommode);
+                return;
             }
+            mDrawingView.enterZoomMode();
+            zoomModeButton.setText(R.string.exitzoommode);
         });
 
-        findViewById(R.id.set_background).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED){
-                    ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 0);
-                    return;
-                }
-                Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-                intent.addCategory(Intent.CATEGORY_OPENABLE);
-                intent.setType("image/*");
-                startActivityForResult(intent, REQUEST_CODE_IMPORT_IMAGE);
+        findViewById(R.id.set_background).setOnClickListener(view -> {
+            if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 0);
+                return;
             }
+            Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.setType("image/*");
+            startActivityForResult(intent, REQUEST_CODE_IMPORT_IMAGE);
         });
 
-        findViewById(R.id.set_background_null).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                mDrawingView.setBackgroundImage(null);
-                mUndoButton.setEnabled(!mDrawingView.isUndoStackEmpty());
-                mRedoButton.setEnabled(!mDrawingView.isRedoStackEmpty());
-            }
+        findViewById(R.id.set_background_null).setOnClickListener(view -> {
+            mDrawingView.setBackgroundImage(null);
+            mUndoButton.setEnabled(!mDrawingView.isUndoStackEmpty());
+            mRedoButton.setEnabled(!mDrawingView.isRedoStackEmpty());
         });
 
-        findViewById(R.id.export).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED){
-                    ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 0);//ignoring the request code
-                    return;
-                }
-                Bitmap bitmap = mDrawingView.exportDrawing();
-                exportImage(bitmap);
+        findViewById(R.id.export).setOnClickListener(view -> {
+            if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 0);//ignoring the request code
+                return;
             }
+            Bitmap bitmap = mDrawingView.exportDrawing();
+            exportImage(bitmap);
         });
 
-        findViewById(R.id.export_without_bg).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED){
-                    ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 0);//ignoring the request code
-                    return;
-                }
-                Bitmap bitmap = mDrawingView.exportDrawingWithoutBackground();
-                exportImage(bitmap);
+        findViewById(R.id.export_without_bg).setOnClickListener(view -> {
+            if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 0);//ignoring the request code
+                return;
             }
+            Bitmap bitmap = mDrawingView.exportDrawingWithoutBackground();
+            exportImage(bitmap);
         });
 
         setupUndoAndRedo();
         setupBrushes();
         setupColorViews();
+
+        //  mDrawingView.setNewDraw(path, paint, rect);
+        mDrawingView.setOnDrawListener(new DrawingView.OnDrawListener() {
+
+            @Override
+            public void onDraw(Bitmap bitmap, Rect rect) {
+                Toast.makeText(MainActivity.this, "Bitmap bitmap, Rect rect", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onDraw(Path path, Paint paint, Rect rect) {
+                Toast.makeText(MainActivity.this, "Path path, Paint paint, Rect rect", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void exportImage(Bitmap bitmap) {
@@ -165,7 +163,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_CODE_IMPORT_IMAGE){
+        if (requestCode == REQUEST_CODE_IMPORT_IMAGE) {
             if (AppCompatActivity.RESULT_OK != resultCode)
                 return;
             try {
@@ -179,7 +177,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void setBrushSelected(int brushID){
+    private void setBrushSelected(int brushID) {
         BrushSettings settings = mDrawingView.getBrushSettings();
         settings.setSelectedBrush(brushID);
         int sizeInPercentage = (int) (settings.getSelectedBrushSize() * 100);
@@ -188,28 +186,28 @@ public class MainActivity extends AppCompatActivity {
 
     private void setupUndoAndRedo() {
         mUndoButton = findViewById(R.id.undo);
-        mUndoButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                mDrawingView.undo();
-                mUndoButton.setEnabled(!mDrawingView.isUndoStackEmpty());
-                mRedoButton.setEnabled(!mDrawingView.isRedoStackEmpty());
-            }
+        mUndoButton.setOnClickListener(view -> {
+            mDrawingView.undo();
+            mUndoButton.setEnabled(!mDrawingView.isUndoStackEmpty());
+            mRedoButton.setEnabled(!mDrawingView.isRedoStackEmpty());
         });
 
         mRedoButton = findViewById(R.id.redo);
-        mRedoButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                mDrawingView.redo();
-                mUndoButton.setEnabled(!mDrawingView.isUndoStackEmpty());
-                mRedoButton.setEnabled(!mDrawingView.isRedoStackEmpty());
-            }
+        mRedoButton.setOnClickListener(view -> {
+            mDrawingView.redo();
+            mUndoButton.setEnabled(!mDrawingView.isUndoStackEmpty());
+            mRedoButton.setEnabled(!mDrawingView.isRedoStackEmpty());
         });
 
         mDrawingView.setOnDrawListener(new DrawingView.OnDrawListener() {
             @Override
-            public void onDraw() {
+            public void onDraw(Bitmap bitmap, Rect rect) {
+                mUndoButton.setEnabled(true);
+                mRedoButton.setEnabled(false);
+            }
+
+            @Override
+            public void onDraw(Path path, Paint paint, Rect rect) {
                 mUndoButton.setEnabled(true);
                 mRedoButton.setEnabled(false);
             }
@@ -217,24 +215,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupColorViews() {
-        View.OnClickListener colorClickListener = new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                int color = ((ColorDrawable)view.getBackground()).getColor();
-                BrushSettings brushSettings = mDrawingView.getBrushSettings();
-                brushSettings.setColor(color);
-            }
+        View.OnClickListener colorClickListener = view -> {
+            int color = ((ColorDrawable) view.getBackground()).getColor();
+            BrushSettings brushSettings = mDrawingView.getBrushSettings();
+            brushSettings.setColor(color);
         };
         ViewGroup colorsContainer = findViewById(R.id.brush_colors_container);
         for (View colorView : colorsContainer.getTouchables())
             colorView.setOnClickListener(colorClickListener);
 
-        View.OnClickListener bgClickListener = new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                int color = ((ColorDrawable)view.getBackground()).getColor();
-                mDrawingView.setDrawingBackground(color);
-            }
+        View.OnClickListener bgClickListener = view -> {
+            int color = ((ColorDrawable) view.getBackground()).getColor();
+            mDrawingView.setDrawingBackground(color);
         };
         ViewGroup bgColorsContainer = findViewById(R.id.bg_colors_container);
         for (View colorView : bgColorsContainer.getTouchables())
@@ -243,44 +235,29 @@ public class MainActivity extends AppCompatActivity {
 
     private void setupBrushes() {
         RadioButton pen = findViewById(R.id.pen);
-        pen.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-                if (b) setBrushSelected(Brushes.PEN);
-            }
+        pen.setOnCheckedChangeListener((compoundButton, b) -> {
+            if (b) setBrushSelected(Brushes.PEN);
         });
 
         RadioButton pencil = findViewById(R.id.pencil);
-        pencil.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-                if (b) setBrushSelected(Brushes.PENCIL);
-            }
+        pencil.setOnCheckedChangeListener((compoundButton, b) -> {
+            if (b) setBrushSelected(Brushes.PENCIL);
         });
 
         RadioButton eraser = findViewById(R.id.eraser);
-        eraser.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-                if (b) setBrushSelected(Brushes.ERASER);
-            }
+        eraser.setOnCheckedChangeListener((compoundButton, b) -> {
+            if (b) setBrushSelected(Brushes.ERASER);
         });
 
         RadioButton calligraphy = findViewById(R.id.calligraphy);
-        calligraphy.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-                if (b)
-                    setBrushSelected(Brushes.CALLIGRAPHY);
-            }
+        calligraphy.setOnCheckedChangeListener((compoundButton, b) -> {
+            if (b)
+                setBrushSelected(Brushes.CALLIGRAPHY);
         });
 
         RadioButton airBrush = findViewById(R.id.air_brush);
-        airBrush.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-                if (b) setBrushSelected(Brushes.AIR_BRUSH);
-            }
+        airBrush.setOnCheckedChangeListener((compoundButton, b) -> {
+            if (b) setBrushSelected(Brushes.AIR_BRUSH);
         });
     }
 
